@@ -40,7 +40,7 @@ const DB = {
 
     // Default categories - Indonesian
     INCOME_SOURCES: [
-        'Gaji', 'Freelance', 'Investasi', 'Bisnis', 'Sewa', 'Hadiah', 'Lainnya'
+        'Laba Harian' , 'Laba Mingguan', 'Laba Bulanan', 'Laba Tahunan', 'Bisnis', 'Sewa', 'Arisan', 'Lainnya'
     ],
 
     EXPENSE_CATEGORIES: [
