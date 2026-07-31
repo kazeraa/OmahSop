@@ -2,20 +2,26 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Omah Sop - Pembukuan 3D</title>
-    
+
+    <!-- PWA / Fullscreen Meta -->
     <meta name="description" content="Omah Sop - Aplikasi Pembukuan & Manajemen Keuangan Modern 3D">
     <meta name="theme-color" content="#0a0a1a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Omah Sop">
-    
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Omah Sop">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-touch-fullscreen" content="yes">
+
     <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
-    
+    <link rel="apple-touch-startup-image" href="icons/icon-512.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)">
+
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Font Awesome -->
@@ -24,33 +30,184 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
+    <!-- html5-qrcode for QR scanning -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <!-- jsPDF for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- SheetJS for Excel export -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+
     <link rel="stylesheet" href="css/style.css">
+    <!-- Apple splash screen hiding -->
+    <style>
+        /* Hide Safari UI */
+        html, body {
+            overscroll-behavior: none;
+            -webkit-overflow-scrolling: touch;
+        }
+        /* Prevent pull-to-refresh */
+        body {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        #main-content {
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            height: 100vh;
+        }
+    </style>
 </head>
 <body>
-    <!-- Loading Screen -->
+    <!-- ===== SPLASH / LOADING SCREEN ===== -->
     <div id="loading-screen">
-        <div class="loader">
-            <div class="loader-cube">
+        <div class="splash-container">
+            <div class="splash-logo">
                 <i class="fas fa-bowl-food"></i>
             </div>
-            <div class="loader-bar">
-                <div class="loader-fill"></div>
+            <h1 class="splash-title">Omah Sop</h1>
+            <p class="splash-subtitle">Pembukuan 3D Modern</p>
+            <div class="splash-loader">
+                <div class="splash-loader-bar"></div>
             </div>
-            <p>Memuat Omah Sop...</p>
+            <p class="splash-version">v2.0</p>
         </div>
     </div>
 
-    <!-- Offline Indicator -->
+    <!-- ===== LOGIN SCREEN ===== -->
+    <div id="login-screen" class="login-overlay" style="display:none;">
+        <div class="login-modal glass">
+            <div class="login-logo">
+                <i class="fas fa-bowl-food"></i>
+            </div>
+            <h2 class="login-title">Omah Sop</h2>
+            <p class="login-subtitle">Masuk untuk melanjutkan</p>
+
+            <!-- Login Tabs -->
+            <div class="login-tabs">
+                <button class="login-tab active" data-tab="pin">PIN</button>
+                <button class="login-tab" data-tab="bio">Fingerprint</button>
+                <button class="login-tab" data-tab="akun">Akun</button>
+            </div>
+
+            <!-- PIN Login -->
+            <div class="login-panel active" id="login-pin">
+                <p class="login-desc">Masukkan PIN 6 digit</p>
+                <div class="pin-dots" id="pinDots">
+                    <span class="pin-dot" data-idx="0"></span>
+                    <span class="pin-dot" data-idx="1"></span>
+                    <span class="pin-dot" data-idx="2"></span>
+                    <span class="pin-dot" data-idx="3"></span>
+                    <span class="pin-dot" data-idx="4"></span>
+                    <span class="pin-dot" data-idx="5"></span>
+                </div>
+                <div class="pin-keypad">
+                    <button class="pin-key" data-value="1">1</button>
+                    <button class="pin-key" data-value="2">2</button>
+                    <button class="pin-key" data-value="3">3</button>
+                    <button class="pin-key" data-value="4">4</button>
+                    <button class="pin-key" data-value="5">5</button>
+                    <button class="pin-key" data-value="6">6</button>
+                    <button class="pin-key" data-value="7">7</button>
+                    <button class="pin-key" data-value="8">8</button>
+                    <button class="pin-key" data-value="9">9</button>
+                    <button class="pin-key" data-value="clear"><i class="fas fa-backspace"></i></button>
+                    <button class="pin-key" data-value="0">0</button>
+                    <button class="pin-key" data-value="ok"><i class="fas fa-check"></i></button>
+                </div>
+                <button class="login-link" id="pinSetupBtn">Atur PIN Baru</button>
+            </div>
+
+            <!-- Biometric Login -->
+            <div class="login-panel" id="login-bio">
+                <div class="bio-icon">
+                    <i class="fas fa-fingerprint"></i>
+                </div>
+                <p class="login-desc" id="bioStatus">Sentuh sensor fingerprint</p>
+                <button class="btn-primary glass" id="bioLoginBtn">
+                    <i class="fas fa-fingerprint"></i> Mulai Fingerprint
+                </button>
+                <p class="login-hint">Gunakan fingerprint atau face unlock perangkatmu</p>
+            </div>
+
+            <!-- Akun Login -->
+            <div class="login-panel" id="login-akun">
+                <form id="loginForm" onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="loginEmail" placeholder="email@contoh.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="loginPassword" placeholder="Password" required>
+                    </div>
+                    <button type="submit" class="btn-primary glass" style="width:100%;justify-content:center;">
+                        <i class="fas fa-right-to-bracket"></i> Masuk
+                    </button>
+                </form>
+                <button class="login-link" id="registerBtn">Belum punya akun? Daftar</button>
+                <button class="login-link" id="skipLoginBtn">Lewati → Gunakan Lokal</button>
+            </div>
+
+            <p class="login-error" id="loginError"></p>
+        </div>
+    </div>
+
+    <!-- ===== REGISTER SCREEN ===== -->
+    <div id="register-screen" class="login-overlay" style="display:none;">
+        <div class="login-modal glass">
+            <div class="login-logo">
+                <i class="fas fa-bowl-food"></i>
+            </div>
+            <h2 class="login-title">Daftar Akun Baru</h2>
+            <form id="registerForm" onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label>Nama</label>
+                    <input type="text" id="regName" placeholder="Nama lengkap" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="regEmail" placeholder="email@contoh.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="regPassword" placeholder="Min 6 karakter" required minlength="6">
+                </div>
+                <button type="submit" class="btn-primary glass" style="width:100%;justify-content:center;">
+                    <i class="fas fa-user-plus"></i> Daftar
+                </button>
+            </form>
+            <button class="login-link" id="backToLoginBtn">Sudah punya akun? Masuk</button>
+            <p class="login-error" id="registerError"></p>
+        </div>
+    </div>
+
+    <!-- ===== OFFLINE INDICATOR ===== -->
     <div id="offline-indicator" class="offline-bar" style="display:none">
         <i class="fas fa-wifi-slash"></i>
         <span>Kamu sedang offline. Data disimpan secara lokal.</span>
     </div>
 
-    <!-- 3D Canvas Background -->
+    <!-- ===== INSTALL PROMPT ===== -->
+    <div id="install-prompt" class="install-prompt" style="display:none;">
+        <div class="install-content">
+            <i class="fas fa-bowl-food"></i>
+            <div>
+                <strong>Install Omah Sop</strong>
+                <small>Pasang sebagai aplikasi</small>
+            </div>
+            <button id="installBtn" class="btn-primary glass" style="padding:8px 16px;font-size:13px;">
+                <i class="fas fa-download"></i> Install
+            </button>
+            <button id="installCloseBtn" class="btn-ghost" style="padding:4px 8px;font-size:18px;">&times;</button>
+        </div>
+    </div>
+
+    <!-- ===== 3D CANVAS BACKGROUND ===== -->
     <div id="three-canvas"></div>
 
-    <!-- Sidebar Navigation -->
+    <!-- ===== SIDEBAR ===== -->
     <nav id="sidebar">
         <div class="sidebar-header">
             <div class="logo">
@@ -59,36 +216,12 @@
             </div>
         </div>
         <ul class="nav-links">
-            <li>
-                <a href="#" class="nav-item active" data-page="dashboard">
-                    <i class="fas fa-chart-pie"></i>
-                    <span>Dashboard</span>
-                </a>
-            </li>
-            <li>
-                <a href="#" class="nav-item" data-page="income">
-                    <i class="fas fa-arrow-trend-up"></i>
-                    <span>Pemasukan</span>
-                </a>
-            </li>
-            <li>
-                <a href="#" class="nav-item" data-page="expenses">
-                    <i class="fas fa-arrow-trend-down"></i>
-                    <span>Pengeluaran</span>
-                </a>
-            </li>
-            <li>
-                <a href="#" class="nav-item" data-page="receivables">
-                    <i class="fas fa-hand-holding-dollar"></i>
-                    <span>Piutang</span>
-                </a>
-            </li>
-            <li>
-                <a href="#" class="nav-item" data-page="budget">
-                    <i class="fas fa-chart-simple"></i>
-                    <span>Anggaran</span>
-                </a>
-            </li>
+            <li><a href="#" class="nav-item active" data-page="dashboard"><i class="fas fa-chart-pie"></i><span>Dashboard</span></a></li>
+            <li><a href="#" class="nav-item" data-page="income"><i class="fas fa-arrow-trend-up"></i><span>Pemasukan</span></a></li>
+            <li><a href="#" class="nav-item" data-page="expenses"><i class="fas fa-arrow-trend-down"></i><span>Pengeluaran</span></a></li>
+            <li><a href="#" class="nav-item" data-page="receivables"><i class="fas fa-hand-holding-dollar"></i><span>Piutang</span></a></li>
+            <li><a href="#" class="nav-item" data-page="budget"><i class="fas fa-chart-simple"></i><span>Anggaran</span></a></li>
+            <li><a href="#" class="nav-item" data-page="laporan"><i class="fas fa-file-pdf"></i><span>Laporan</span></a></li>
         </ul>
         <div class="sidebar-footer">
             <div class="data-stats">
@@ -96,334 +229,207 @@
                 <span id="entry-count">0 entri</span>
             </div>
             <div class="footer-actions">
-                <button id="supabaseSaveBtn" class="btn-ghost" title="Simpan ke Cloud">
-                    <i class="fas fa-cloud-upload-alt"></i>
-                </button>
-                <button id="supabaseLoadBtn" class="btn-ghost" title="Muat dari Cloud">
-                    <i class="fas fa-cloud-download-alt"></i>
-                </button>
-                <button id="importBtn" class="btn-ghost" title="Impor Data">
-                    <i class="fas fa-upload"></i>
-                </button>
-                <button id="exportBtn" class="btn-ghost" title="Ekspor Data">
-                    <i class="fas fa-download"></i>
-                </button>
+                <button id="notificationBtn" class="btn-ghost" title="Notifikasi" style="color:var(--accent-orange)"><i class="fas fa-bell"></i></button>
+                <button id="qrScanBtn" class="btn-ghost" title="Scan QR" style="color:var(--accent-cyan)"><i class="fas fa-qrcode"></i></button>
+                <button id="supabaseSaveBtn" class="btn-ghost" title="Simpan ke Cloud"><i class="fas fa-cloud-upload-alt"></i></button>
+                <button id="supabaseLoadBtn" class="btn-ghost" title="Muat dari Cloud"><i class="fas fa-cloud-download-alt"></i></button>
+                <button id="importBtn" class="btn-ghost" title="Impor Data"><i class="fas fa-upload"></i></button>
+                <button id="exportBtn" class="btn-ghost" title="Ekspor Data"><i class="fas fa-download"></i></button>
             </div>
         </div>
     </nav>
 
-    <!-- Mobile Header -->
+    <!-- ===== MOBILE HEADER ===== -->
     <header id="mobile-header">
-        <button id="menuToggle" class="btn-ghost">
-            <i class="fas fa-bars"></i>
-        </button>
-        <div class="logo">
-            <i class="fas fa-bowl-food"></i>
-            <span>Omah Sop</span>
+        <button id="menuToggle" class="btn-ghost"><i class="fas fa-bars"></i></button>
+        <div class="logo"><i class="fas fa-bowl-food"></i><span>Omah Sop</span></div>
+        <div style="display:flex;gap:2px;">
+            <button id="qrScanBtnMobile" class="btn-ghost" title="Scan QR" style="color:var(--accent-cyan)"><i class="fas fa-qrcode"></i></button>
+            <button id="exportBtnMobile" class="btn-ghost" title="Ekspor"><i class="fas fa-download"></i></button>
         </div>
-        <button id="exportBtnMobile" class="btn-ghost" title="Ekspor Data">
-            <i class="fas fa-download"></i>
-        </button>
     </header>
 
-    <!-- Main Content -->
+    <!-- ===== MAIN CONTENT ===== -->
     <main id="main-content">
-        <!-- Dashboard Page -->
+        <!-- DASHBOARD -->
         <section id="page-dashboard" class="page active">
             <div class="page-header">
-                <h1>Dashboard</h1>
-                <p class="text-muted">Ringkasan keuanganmu secara langsung</p>
+                <div>
+                    <h1>Dashboard</h1>
+                    <p class="text-muted">Ringkasan keuanganmu secara langsung</p>
+                </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <button class="btn-primary glass" onclick="app.printReport()" style="background:linear-gradient(135deg,var(--accent-orange),var(--accent-red))"><i class="fas fa-print"></i> Print</button>
+                    <button class="btn-primary glass" onclick="app.downloadLaporan()"><i class="fas fa-file-pdf"></i> Laporan</button>
+                </div>
             </div>
-            
             <div class="stats-grid" id="statsGrid">
                 <div class="stat-card glass" data-balance>
-                    <div class="stat-icon" style="--stat-color: #00d4ff">
-                        <i class="fas fa-wallet"></i>
-                    </div>
-                    <div class="stat-info">
-                        <span class="stat-label">Total Saldo</span>
-                        <span class="stat-value" id="totalBalance">Rp 0</span>
-                    </div>
+                    <div class="stat-icon" style="--stat-color:#00d4ff"><i class="fas fa-wallet"></i></div>
+                    <div class="stat-info"><span class="stat-label">Total Saldo</span><span class="stat-value" id="totalBalance">Rp 0</span></div>
                     <div class="stat-sparkline" id="balanceSpark"></div>
                 </div>
                 <div class="stat-card glass" data-income>
-                    <div class="stat-icon" style="--stat-color: #00ff88">
-                        <i class="fas fa-circle-dollar"></i>
-                    </div>
-                    <div class="stat-info">
-                        <span class="stat-label">Total Pemasukan</span>
-                        <span class="stat-value" id="totalIncome">Rp 0</span>
-                    </div>
+                    <div class="stat-icon" style="--stat-color:#00ff88"><i class="fas fa-circle-dollar"></i></div>
+                    <div class="stat-info"><span class="stat-label">Total Pemasukan</span><span class="stat-value" id="totalIncome">Rp 0</span></div>
                 </div>
                 <div class="stat-card glass" data-expenses>
-                    <div class="stat-icon" style="--stat-color: #ff4757">
-                        <i class="fas fa-receipt"></i>
-                    </div>
-                    <div class="stat-info">
-                        <span class="stat-label">Total Pengeluaran</span>
-                        <span class="stat-value" id="totalExpenses">Rp 0</span>
-                    </div>
+                    <div class="stat-icon" style="--stat-color:#ff4757"><i class="fas fa-receipt"></i></div>
+                    <div class="stat-info"><span class="stat-label">Total Pengeluaran</span><span class="stat-value" id="totalExpenses">Rp 0</span></div>
                 </div>
                 <div class="stat-card glass" data-receivables>
-                    <div class="stat-icon" style="--stat-color: #ffa502">
-                        <i class="fas fa-clock"></i>
-                    </div>
-                    <div class="stat-info">
-                        <span class="stat-label">Piutang Tertunda</span>
-                        <span class="stat-value" id="totalReceivables">Rp 0</span>
-                    </div>
+                    <div class="stat-icon" style="--stat-color:#ffa502"><i class="fas fa-clock"></i></div>
+                    <div class="stat-info"><span class="stat-label">Piutang Tertunda</span><span class="stat-value" id="totalReceivables">Rp 0</span></div>
                 </div>
             </div>
-
             <div class="charts-grid">
-                <div class="chart-container glass">
-                    <h3>Pemasukan vs Pengeluaran</h3>
-                    <canvas id="incomeExpenseChart"></canvas>
-                </div>
-                <div class="chart-container glass">
-                    <h3>Rincian Pengeluaran</h3>
-                    <canvas id="expenseCategoryChart"></canvas>
-                </div>
-                <div class="chart-container glass">
-                    <h3>Status Piutang</h3>
-                    <canvas id="receivablesStatusChart"></canvas>
-                </div>
+                <div class="chart-container glass"><h3>Pemasukan vs Pengeluaran</h3><canvas id="incomeExpenseChart"></canvas></div>
+                <div class="chart-container glass"><h3>Rincian Pengeluaran</h3><canvas id="expenseCategoryChart"></canvas></div>
+                <div class="chart-container glass"><h3>Status Piutang</h3><canvas id="receivablesStatusChart"></canvas></div>
             </div>
-
-            <div class="recent-activity glass">
-                <h3>Aktivitas Terbaru</h3>
-                <div id="recentActivity">
-                    <p class="text-muted">Belum ada aktivitas</p>
-                </div>
-            </div>
+            <div class="recent-activity glass"><h3>Aktivitas Terbaru</h3><div id="recentActivity"><p class="text-muted">Belum ada aktivitas</p></div></div>
         </section>
 
-        <!-- Income Page -->
+        <!-- INCOME -->
         <section id="page-income" class="page">
             <div class="page-header">
-                <div>
-                    <h1>Pemasukan</h1>
-                    <p class="text-muted">Catat penghasilan dan sumber pendapatanmu</p>
-                </div>
-                <button class="btn-primary glass" onclick="openModal('income')">
-                    <i class="fas fa-plus"></i> Tambah Pemasukan
-                </button>
+                <div><h1>Pemasukan</h1><p class="text-muted">Catat penghasilan dan sumber pendapatanmu</p></div>
+                <button class="btn-primary glass" onclick="openModal('income')"><i class="fas fa-plus"></i> Tambah</button>
             </div>
-
             <div class="table-controls glass">
-                <div class="search-box">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="incomeSearch" placeholder="Cari pemasukan..." oninput="filterTable('income')">
-                </div>
-                <div class="filter-group">
-                    <select id="incomeSourceFilter" onchange="filterTable('income')">
-                        <option value="">Semua Sumber</option>
-                    </select>
-                </div>
+                <div class="search-box"><i class="fas fa-search"></i><input type="text" id="incomeSearch" placeholder="Cari pemasukan..." oninput="filterTable('income')"></div>
+                <div class="filter-group"><select id="incomeSourceFilter" onchange="filterTable('income')"><option value="">Semua Sumber</option></select></div>
+                <button class="btn-ghost" onclick="app.printStruk('income')" title="Print Struk"><i class="fas fa-receipt"></i></button>
             </div>
-
             <div class="table-container glass">
-                <table id="incomeTable">
-                    <thead>
-                        <tr>
-                            <th onclick="sortTable('income', 'date')">Tanggal <i class="fas fa-sort"></i></th>
-                            <th onclick="sortTable('income', 'description')">Deskripsi <i class="fas fa-sort"></i></th>
-                            <th onclick="sortTable('income', 'source')">Sumber <i class="fas fa-sort"></i></th>
-                            <th onclick="sortTable('income', 'amount')">Jumlah <i class="fas fa-sort"></i></th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody id="incomeTableBody"></tbody>
-                </table>
-                <p class="empty-state" id="incomeEmpty">Belum ada pemasukan. Mulai catat penghasilanmu!</p>
+                <table id="incomeTable"><thead><tr><th onclick="sortTable('income','date')">Tanggal <i class="fas fa-sort"></i></th><th onclick="sortTable('income','description')">Deskripsi <i class="fas fa-sort"></i></th><th onclick="sortTable('income','source')">Sumber <i class="fas fa-sort"></i></th><th onclick="sortTable('income','amount')">Jumlah <i class="fas fa-sort"></i></th><th>Aksi</th></tr></thead><tbody id="incomeTableBody"></tbody></table>
+                <p class="empty-state" id="incomeEmpty">Belum ada pemasukan.</p>
             </div>
         </section>
 
-        <!-- Expenses Page -->
+        <!-- EXPENSES -->
         <section id="page-expenses" class="page">
             <div class="page-header">
-                <div>
-                    <h1>Pengeluaran</h1>
-                    <p class="text-muted">Pantau pengeluaran dan belanjamu</p>
-                </div>
-                <button class="btn-primary glass" onclick="openModal('expense')">
-                    <i class="fas fa-plus"></i> Tambah Pengeluaran
-                </button>
+                <div><h1>Pengeluaran</h1><p class="text-muted">Pantau pengeluaran dan belanjamu</p></div>
+                <button class="btn-primary glass" onclick="openModal('expense')"><i class="fas fa-plus"></i> Tambah</button>
             </div>
-
             <div class="table-controls glass">
-                <div class="search-box">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="expenseSearch" placeholder="Cari pengeluaran..." oninput="filterTable('expense')">
-                </div>
-                <div class="filter-group">
-                    <select id="expenseCategoryFilter" onchange="filterTable('expense')">
-                        <option value="">Semua Kategori</option>
-                    </select>
-                </div>
+                <div class="search-box"><i class="fas fa-search"></i><input type="text" id="expenseSearch" placeholder="Cari pengeluaran..." oninput="filterTable('expense')"></div>
+                <div class="filter-group"><select id="expenseCategoryFilter" onchange="filterTable('expense')"><option value="">Semua Kategori</option></select></div>
+                <button class="btn-ghost" onclick="app.printStruk('expense')" title="Print Struk"><i class="fas fa-receipt"></i></button>
             </div>
-
             <div class="table-container glass">
-                <table id="expenseTable">
-                    <thead>
-                        <tr>
-                            <th onclick="sortTable('expense', 'date')">Tanggal <i class="fas fa-sort"></i></th>
-                            <th onclick="sortTable('expense', 'description')">Deskripsi <i class="fas fa-sort"></i></th>
-                            <th onclick="sortTable('expense', 'category')">Kategori <i class="fas fa-sort"></i></th>
-                            <th onclick="sortTable('expense', 'amount')">Jumlah <i class="fas fa-sort"></i></th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody id="expenseTableBody"></tbody>
-                </table>
-                <p class="empty-state" id="expenseEmpty">Belum ada pengeluaran. Tambah pengeluaran pertama!</p>
+                <table id="expenseTable"><thead><tr><th onclick="sortTable('expense','date')">Tanggal <i class="fas fa-sort"></i></th><th onclick="sortTable('expense','description')">Deskripsi <i class="fas fa-sort"></i></th><th onclick="sortTable('expense','category')">Kategori <i class="fas fa-sort"></i></th><th onclick="sortTable('expense','amount')">Jumlah <i class="fas fa-sort"></i></th><th>Aksi</th></tr></thead><tbody id="expenseTableBody"></tbody></table>
+                <p class="empty-state" id="expenseEmpty">Belum ada pengeluaran.</p>
             </div>
         </section>
 
-        <!-- Receivables Page -->
+        <!-- RECEIVABLES -->
         <section id="page-receivables" class="page">
             <div class="page-header">
-                <div>
-                    <h1>Piutang</h1>
-                    <p class="text-muted">Catat uang yang dipinjam orang lain kepadamu</p>
-                </div>
-                <button class="btn-primary glass" onclick="openModal('receivable')">
-                    <i class="fas fa-plus"></i> Tambah Piutang
-                </button>
+                <div><h1>Piutang</h1><p class="text-muted">Catat uang yang dipinjam orang lain kepadamu</p></div>
+                <button class="btn-primary glass" onclick="openModal('receivable')"><i class="fas fa-plus"></i> Tambah</button>
             </div>
-
             <div class="table-controls glass">
-                <div class="search-box">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="receivableSearch" placeholder="Cari peminjam..." oninput="filterTable('receivable')">
-                </div>
-                <div class="filter-group">
-                    <select id="receivableStatusFilter" onchange="filterTable('receivable')">
-                        <option value="">Semua Status</option>
-                        <option value="pending">Tertunda</option>
-                        <option value="paid">Lunas</option>
-                        <option value="overdue">Jatuh Tempo</option>
-                    </select>
-                </div>
+                <div class="search-box"><i class="fas fa-search"></i><input type="text" id="receivableSearch" placeholder="Cari peminjam..." oninput="filterTable('receivable')"></div>
+                <div class="filter-group"><select id="receivableStatusFilter" onchange="filterTable('receivable')"><option value="">Semua Status</option><option value="pending">Tertunda</option><option value="paid">Lunas</option><option value="overdue">Jatuh Tempo</option></select></div>
+                <button class="btn-ghost" onclick="app.printStruk('receivable')" title="Print Struk"><i class="fas fa-receipt"></i></button>
             </div>
-
             <div class="table-container glass">
-                <table id="receivableTable">
-                    <thead>
-                        <tr>
-                            <th onclick="sortTable('receivable', 'client')">Peminjam <i class="fas fa-sort"></i></th>
-                            <th onclick="sortTable('receivable', 'description')">Deskripsi <i class="fas fa-sort"></i></th>
-                            <th onclick="sortTable('receivable', 'amount')">Jumlah <i class="fas fa-sort"></i></th>
-                            <th onclick="sortTable('receivable', 'dueDate')">Jatuh Tempo <i class="fas fa-sort"></i></th>
-                            <th onclick="sortTable('receivable', 'status')">Status <i class="fas fa-sort"></i></th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody id="receivableTableBody"></tbody>
-                </table>
-                <p class="empty-state" id="receivableEmpty">Belum ada piutang. Tambah piutang pertama!</p>
+                <table id="receivableTable"><thead><tr><th onclick="sortTable('receivable','client')">Peminjam <i class="fas fa-sort"></i></th><th onclick="sortTable('receivable','description')">Deskripsi <i class="fas fa-sort"></i></th><th onclick="sortTable('receivable','amount')">Jumlah <i class="fas fa-sort"></i></th><th onclick="sortTable('receivable','dueDate')">Jatuh Tempo <i class="fas fa-sort"></i></th><th onclick="sortTable('receivable','status')">Status <i class="fas fa-sort"></i></th><th>Aksi</th></tr></thead><tbody id="receivableTableBody"></tbody></table>
+                <p class="empty-state" id="receivableEmpty">Belum ada piutang.</p>
             </div>
         </section>
 
-        <!-- Budget Page -->
+        <!-- BUDGET -->
         <section id="page-budget" class="page">
-            <div class="page-header">
-                <div>
-                    <h1>Anggaran Bulanan</h1>
-                    <p class="text-muted">Atur anggaran dan pantau batas pengeluaranmu</p>
-                </div>
-            </div>
-
+            <div class="page-header"><div><h1>Anggaran Bulanan</h1><p class="text-muted">Atur anggaran dan pantau batas pengeluaranmu</p></div></div>
             <div class="budget-summary glass">
-                <div class="budget-total">
-                    <span class="budget-label">Total Anggaran</span>
-                    <span class="budget-value" id="budgetTotal">Rp 0</span>
+                <div class="budget-total"><span class="budget-label">Total Anggaran</span><span class="budget-value" id="budgetTotal">Rp 0</span></div>
+                <div class="budget-total"><span class="budget-label">Terpakai</span><span class="budget-value" id="budgetSpent" style="color:var(--accent-red)">Rp 0</span></div>
+                <div class="budget-total"><span class="budget-label">Sisa</span><span class="budget-value" id="budgetRemaining">Rp 0</span></div>
+            </div>
+            <div class="budget-grid" id="budgetGrid"></div>
+        </section>
+
+        <!-- LAPORAN PAGE -->
+        <section id="page-laporan" class="page">
+            <div class="page-header">
+                <div><h1>Laporan Keuangan</h1><p class="text-muted">Download laporan keuangan dalam berbagai format</p></div>
+            </div>
+            <div class="laporan-grid">
+                <div class="glass laporan-card" onclick="app.downloadLaporan('pdf')">
+                    <i class="fas fa-file-pdf" style="color:#ff4757;font-size:40px;"></i>
+                    <h3>Laporan PDF</h3>
+                    <p>Laporan lengkap dengan grafik</p>
+                    <button class="btn-primary glass" style="margin-top:12px;width:100%;justify-content:center;"><i class="fas fa-download"></i> Download PDF</button>
                 </div>
-                <div class="budget-total">
-                    <span class="budget-label">Terpakai</span>
-                    <span class="budget-value" id="budgetSpent" style="color:var(--accent-red)">Rp 0</span>
+                <div class="glass laporan-card" onclick="app.downloadLaporan('csv')">
+                    <i class="fas fa-file-csv" style="color:#00ff88;font-size:40px;"></i>
+                    <h3>Laporan CSV</h3>
+                    <p>Data mentah untuk spreadsheet</p>
+                    <button class="btn-primary glass" style="margin-top:12px;width:100%;justify-content:center;background:linear-gradient(135deg,#00ff88,#00d4ff)"><i class="fas fa-download"></i> Download CSV</button>
                 </div>
-                <div class="budget-total">
-                    <span class="budget-label">Sisa</span>
-                    <span class="budget-value" id="budgetRemaining">Rp 0</span>
+                <div class="glass laporan-card" onclick="app.downloadLaporan('excel')">
+                    <i class="fas fa-file-excel" style="color:#00d4ff;font-size:40px;"></i>
+                    <h3>Laporan Excel</h3>
+                    <p>Format XLSX untuk analisis</p>
+                    <button class="btn-primary glass" style="margin-top:12px;width:100%;justify-content:center;background:linear-gradient(135deg,#00d4ff,#7c5cfc)"><i class="fas fa-download"></i> Download Excel</button>
+                </div>
+                <div class="glass laporan-card" onclick="app.printReport()">
+                    <i class="fas fa-print" style="color:#ffa502;font-size:40px;"></i>
+                    <h3>Cetak / Print</h3>
+                    <p>Cetak laporan untuk Arsip</p>
+                    <button class="btn-primary glass" style="margin-top:12px;width:100%;justify-content:center;background:linear-gradient(135deg,#ffa502,#ff4757)"><i class="fas fa-print"></i> Print</button>
                 </div>
             </div>
-
-            <div class="budget-grid" id="budgetGrid"></div>
+            <div class="glass" style="padding:24px;margin-top:24px;">
+                <h3>Ringkasan Cepat</h3>
+                <div id="laporanSummary" style="margin-top:12px;color:var(--text-secondary);font-size:14px;line-height:1.8;">
+                    Silakan pilih jenis laporan di atas.
+                </div>
+            </div>
         </section>
     </main>
 
     <!-- Hidden file input for import -->
     <input type="file" id="importFileInput" accept=".json" style="display:none">
 
-    <!-- Modal -->
+    <!-- ===== QR SCANNER MODAL ===== -->
+    <div id="qrModal" class="modal">
+        <div class="modal-content glass" style="max-width:480px;">
+            <div class="modal-header">
+                <h2>Scan QR Code</h2>
+                <button class="btn-close" onclick="app.closeQRScanner()">&times;</button>
+            </div>
+            <div id="qr-reader" style="width:100%;min-height:300px;border-radius:10px;overflow:hidden;"></div>
+            <p class="text-muted" style="text-align:center;margin-top:12px;font-size:13px;">Arahkan kamera ke QR Code untuk menambahkan transaksi</p>
+            <div class="form-actions" style="margin-top:16px;">
+                <button class="btn-secondary" onclick="app.closeQRScanner()" style="width:100%;justify-content:center;">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL ===== -->
     <div id="modal" class="modal">
         <div class="modal-content glass">
-            <div class="modal-header">
-                <h2 id="modalTitle">Tambah Entri</h2>
-                <button class="btn-close" onclick="closeModal()">&times;</button>
-            </div>
+            <div class="modal-header"><h2 id="modalTitle">Tambah Entri</h2><button class="btn-close" onclick="closeModal()">&times;</button></div>
             <form id="modalForm" onsubmit="handleFormSubmit(event)">
-                <input type="hidden" id="editId">
-                <input type="hidden" id="formType">
-                
-                <div class="form-group">
-                    <label for="formDescription">Deskripsi</label>
-                    <input type="text" id="formDescription" required placeholder="Masukkan deskripsi">
-                </div>
-
-                <div class="form-group" id="clientGroup" style="display:none">
-                    <label for="formClient">Nama Peminjam</label>
-                    <input type="text" id="formClient" placeholder="Masukkan nama peminjam">
-                </div>
-
-                <div class="form-group">
-                    <label for="formAmount">Jumlah (Rp)</label>
-                    <input type="number" id="formAmount" required min="0.01" step="0.01" placeholder="0">
-                </div>
-
-                <div class="form-group" id="sourceGroup">
-                    <label for="formSource">Sumber / Kategori</label>
-                    <select id="formSource"></select>
-                </div>
-
-                <div class="form-group">
-                    <label for="formDate">Tanggal</label>
-                    <input type="date" id="formDate" required>
-                </div>
-
-                <div class="form-group" id="dueDateGroup" style="display:none">
-                    <label for="formDueDate">Tanggal Jatuh Tempo</label>
-                    <input type="date" id="formDueDate">
-                </div>
-
-                <div class="form-group" id="paymentGroup" style="display:none">
-                    <label for="formPaymentMethod">Metode Pembayaran</label>
-                    <select id="formPaymentMethod">
-                        <option value="cash">Tunai</option>
-                        <option value="card">Kartu</option>
-                        <option value="bank">Transfer Bank</option>
-                        <option value="other">Lainnya</option>
-                    </select>
-                </div>
-
-                <div class="form-group" id="statusGroup" style="display:none">
-                    <label for="formStatus">Status</label>
-                    <select id="formStatus">
-                        <option value="pending">Tertunda</option>
-                        <option value="paid">Lunas</option>
-                    </select>
-                </div>
-
-                <div class="form-actions">
-                    <button type="button" class="btn-secondary" onclick="closeModal()">Batal</button>
-                    <button type="submit" class="btn-primary glass" id="submitBtn">Simpan</button>
-                </div>
+                <input type="hidden" id="editId"><input type="hidden" id="formType">
+                <div class="form-group"><label for="formDescription">Deskripsi</label><input type="text" id="formDescription" required placeholder="Masukkan deskripsi"></div>
+                <div class="form-group" id="clientGroup" style="display:none"><label for="formClient">Nama Peminjam</label><input type="text" id="formClient" placeholder="Nama peminjam"></div>
+                <div class="form-group"><label for="formAmount">Jumlah (Rp)</label><input type="number" id="formAmount" required min="0.01" step="0.01" placeholder="0"></div>
+                <div class="form-group" id="sourceGroup"><label for="formSource">Sumber / Kategori</label><select id="formSource"></select></div>
+                <div class="form-group"><label for="formDate">Tanggal</label><input type="date" id="formDate" required></div>
+                <div class="form-group" id="dueDateGroup" style="display:none"><label for="formDueDate">Jatuh Tempo</label><input type="date" id="formDueDate"></div>
+                <div class="form-group" id="paymentGroup" style="display:none"><label for="formPaymentMethod">Metode</label><select id="formPaymentMethod"><option value="cash">Tunai</option><option value="card">Kartu</option><option value="bank">Transfer Bank</option><option value="ewallet">E-Wallet</option><option value="other">Lainnya</option></select></div>
+                <div class="form-group" id="statusGroup" style="display:none"><label for="formStatus">Status</label><select id="formStatus"><option value="pending">Tertunda</option><option value="paid">Lunas</option></select></div>
+                <div class="form-actions"><button type="button" class="btn-secondary" onclick="closeModal()">Batal</button><button type="submit" class="btn-primary glass" id="submitBtn">Simpan</button></div>
             </form>
         </div>
     </div>
 
-    <!-- Toast Notification -->
+    <!-- ===== TOAST ===== -->
     <div id="toast" class="toast"></div>
 
     <script src="js/database.js"></script>
