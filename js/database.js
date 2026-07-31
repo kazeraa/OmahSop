@@ -40,7 +40,7 @@ const DB = {
 
     // Default categories - Indonesian
     INCOME_SOURCES: [
-        'Gaji', 'Freelance', 'Investasi', 'Bisnis', 'Sewa', 'Hadiah', 'Lainnya'
+        'Laba Harian' , 'Laba Mingguan', 'Laba Bulanan', 'Laba Tahunan', 'Bisnis', 'Sewa', 'Arisan', 'Lainnya'
     ],
 
     EXPENSE_CATEGORIES: [
@@ -61,26 +61,19 @@ const DB = {
     init() {
         if (!localStorage.getItem(this.KEYS.INCOME)) {
             const sampleIncome = [
-                { id: 'inc_1', description: 'Gaji Bulanan', amount: 5000000, source: 'Gaji', date: '2024-01-01', paymentMethod: 'bank', createdAt: Date.now() - 86400000 * 5 },
-                { id: 'inc_2', description: 'Project Freelance', amount: 1500000, source: 'Freelance', date: '2024-01-03', paymentMethod: 'bank', createdAt: Date.now() - 86400000 * 3 },
-                { id: 'inc_3', description: 'Dividen Saham', amount: 300000, source: 'Investasi', date: '2024-01-05', paymentMethod: 'bank', createdAt: Date.now() - 86400000 * 1 }
+                
             ];
             this.setData(this.KEYS.INCOME, sampleIncome);
         }
         if (!localStorage.getItem(this.KEYS.EXPENSES)) {
             const sampleExpenses = [
-                { id: 'exp_1', description: 'Sewa Kos', amount: 1800000, category: 'Tempat Tinggal', date: '2024-01-01', paymentMethod: 'bank', createdAt: Date.now() - 86400000 * 5 },
-                { id: 'exp_2', description: 'Belanja Bulanan', amount: 500000, category: 'Makanan & Minuman', date: '2024-01-02', paymentMethod: 'cash', createdAt: Date.now() - 86400000 * 4 },
-                { id: 'exp_3', description: 'Listrik & Air', amount: 250000, category: 'Listrik & Air', date: '2024-01-04', paymentMethod: 'bank', createdAt: Date.now() - 86400000 * 2 },
-                { id: 'exp_4', description: 'Langganan Netflix', amount: 65000, category: 'Hiburan', date: '2024-01-05', paymentMethod: 'ewallet', createdAt: Date.now() - 86400000 * 1 }
+                
             ];
             this.setData(this.KEYS.EXPENSES, sampleExpenses);
         }
         if (!localStorage.getItem(this.KEYS.RECEIVABLES)) {
             const sampleReceivables = [
-                { id: 'rec_1', client: 'Budi Santoso', description: 'Pinjaman', amount: 2000000, dueDate: '2024-02-15', status: 'pending', createdAt: Date.now() - 86400000 * 10 },
-                { id: 'rec_2', client: 'Siti Rahayu', description: 'Bayar Utang', amount: 750000, dueDate: '2024-01-25', status: 'overdue', createdAt: Date.now() - 86400000 * 20 },
-                { id: 'rec_3', client: 'Ahmad Jaya', description: 'Jasa Desain', amount: 500000, dueDate: '2024-01-10', status: 'paid', createdAt: Date.now() - 86400000 * 30 }
+                
             ];
             this.setData(this.KEYS.RECEIVABLES, sampleReceivables);
         }
