@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Omah Sop - Pembukuan 3D</title>
+    
+    <meta name="description" content="Omah Sop - Aplikasi Pembukuan & Manajemen Keuangan Modern 3D">
+    <meta name="theme-color" content="#0a0a1a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Omah Sop">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+        <div class="loader">
+            <div class="loader-cube">
+                <i class="fas fa-bowl-food"></i>
+            </div>
+            <div class="loader-bar">
+                <div class="loader-fill"></div>
+            </div>
+            <p>Memuat Omah Sop...</p>
+        </div>
+    </div>
+
+    <!-- Offline Indicator -->
+    <div id="offline-indicator" class="offline-bar" style="display:none">
+        <i class="fas fa-wifi-slash"></i>
+        <span>Kamu sedang offline. Data disimpan secara lokal.</span>
+    </div>
+
+    <!-- 3D Canvas Background -->
+    <div id="three-canvas"></div>
+
+    <!-- Sidebar Navigation -->
+    <nav id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <i class="fas fa-bowl-food"></i>
+                <span>Omah Sop</span>
+            </div>
+        </div>
+        <ul class="nav-links">
+            <li>
+                <a href="#" class="nav-item active" data-page="dashboard">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" class="nav-item" data-page="income">
+                    <i class="fas fa-arrow-trend-up"></i>
+                    <span>Pemasukan</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" class="nav-item" data-page="expenses">
+                    <i class="fas fa-arrow-trend-down"></i>
+                    <span>Pengeluaran</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" class="nav-item" data-page="receivables">
+                    <i class="fas fa-hand-holding-dollar"></i>
+                    <span>Piutang</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" class="nav-item" data-page="budget">
+                    <i class="fas fa-chart-simple"></i>
+                    <span>Anggaran</span>
+                </a>
+            </li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="data-stats">
+                <i class="fas fa-database"></i>
+                <span id="entry-count">0 entri</span>
+            </div>
+            <div class="footer-actions">
+                <button id="supabaseSaveBtn" class="btn-ghost" title="Simpan ke Cloud">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                </button>
+                <button id="supabaseLoadBtn" class="btn-ghost" title="Muat dari Cloud">
+                    <i class="fas fa-cloud-download-alt"></i>
+                </button>
+                <button id="importBtn" class="btn-ghost" title="Impor Data">
+                    <i class="fas fa-upload"></i>
+                </button>
+                <button id="exportBtn" class="btn-ghost" title="Ekspor Data">
+                    <i class="fas fa-download"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mobile Header -->
+    <header id="mobile-header">
+        <button id="menuToggle" class="btn-ghost">
+            <i class="fas fa-bars"></i>
+        </button>
+        <div class="logo">
+            <i class="fas fa-bowl-food"></i>
+            <span>Omah Sop</span>
+        </div>
+        <button id="exportBtnMobile" class="btn-ghost" title="Ekspor Data">
+            <i class="fas fa-download"></i>
+        </button>
+    </header>
+
+    <!-- Main Content -->
+    <main id="main-content">
+        <!-- Dashboard Page -->
+        <section id="page-dashboard" class="page active">
+            <div class="page-header">
+                <h1>Dashboard</h1>
+                <p class="text-muted">Ringkasan keuanganmu secara langsung</p>
+            </div>
+            
+            <div class="stats-grid" id="statsGrid">
+                <div class="stat-card glass" data-balance>
+                    <div class="stat-icon" style="--stat-color: #00d4ff">
+                        <i class="fas fa-wallet"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">Total Saldo</span>
+                        <span class="stat-value" id="totalBalance">Rp 0</span>
+                    </div>
+                    <div class="stat-sparkline" id="balanceSpark"></div>
+                </div>
+                <div class="stat-card glass" data-income>
+                    <div class="stat-icon" style="--stat-color: #00ff88">
+                        <i class="fas fa-circle-dollar"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">Total Pemasukan</span>
+                        <span class="stat-value" id="totalIncome">Rp 0</span>
+                    </div>
+                </div>
+                <div class="stat-card glass" data-expenses>
+                    <div class="stat-icon" style="--stat-color: #ff4757">
+                        <i class="fas fa-receipt"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">Total Pengeluaran</span>
+                        <span class="stat-value" id="totalExpenses">Rp 0</span>
+                    </div>
+                </div>
+                <div class="stat-card glass" data-receivables>
+                    <div class="stat-icon" style="--stat-color: #ffa502">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">Piutang Tertunda</span>
+                        <span class="stat-value" id="totalReceivables">Rp 0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-container glass">
+                    <h3>Pemasukan vs Pengeluaran</h3>
+                    <canvas id="incomeExpenseChart"></canvas>
+                </div>
+                <div class="chart-container glass">
+                    <h3>Rincian Pengeluaran</h3>
+                    <canvas id="expenseCategoryChart"></canvas>
+                </div>
+                <div class="chart-container glass">
+                    <h3>Status Piutang</h3>
+                    <canvas id="receivablesStatusChart"></canvas>
+                </div>
+            </div>
+
+            <div class="recent-activity glass">
+                <h3>Aktivitas Terbaru</h3>
+                <div id="recentActivity">
+                    <p class="text-muted">Belum ada aktivitas</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Income Page -->
+        <section id="page-income" class="page">
+            <div class="page-header">
+                <div>
+                    <h1>Pemasukan</h1>
+                    <p class="text-muted">Catat penghasilan dan sumber pendapatanmu</p>
+                </div>
+                <button class="btn-primary glass" onclick="openModal('income')">
+                    <i class="fas fa-plus"></i> Tambah Pemasukan
+                </button>
+            </div>
+
+            <div class="table-controls glass">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="incomeSearch" placeholder="Cari pemasukan..." oninput="filterTable('income')">
+                </div>
+                <div class="filter-group">
+                    <select id="incomeSourceFilter" onchange="filterTable('income')">
+                        <option value="">Semua Sumber</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-container glass">
+                <table id="incomeTable">
+                    <thead>
+                        <tr>
+                            <th onclick="sortTable('income', 'date')">Tanggal <i class="fas fa-sort"></i></th>
+                            <th onclick="sortTable('income', 'description')">Deskripsi <i class="fas fa-sort"></i></th>
+                            <th onclick="sortTable('income', 'source')">Sumber <i class="fas fa-sort"></i></th>
+                            <th onclick="sortTable('income', 'amount')">Jumlah <i class="fas fa-sort"></i></th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="incomeTableBody"></tbody>
+                </table>
+                <p class="empty-state" id="incomeEmpty">Belum ada pemasukan. Mulai catat penghasilanmu!</p>
+            </div>
+        </section>
+
+        <!-- Expenses Page -->
+        <section id="page-expenses" class="page">
+            <div class="page-header">
+                <div>
+                    <h1>Pengeluaran</h1>
+                    <p class="text-muted">Pantau pengeluaran dan belanjamu</p>
+                </div>
+                <button class="btn-primary glass" onclick="openModal('expense')">
+                    <i class="fas fa-plus"></i> Tambah Pengeluaran
+                </button>
+            </div>
+
+            <div class="table-controls glass">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="expenseSearch" placeholder="Cari pengeluaran..." oninput="filterTable('expense')">
+                </div>
+                <div class="filter-group">
+                    <select id="expenseCategoryFilter" onchange="filterTable('expense')">
+                        <option value="">Semua Kategori</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-container glass">
+                <table id="expenseTable">
+                    <thead>
+                        <tr>
+                            <th onclick="sortTable('expense', 'date')">Tanggal <i class="fas fa-sort"></i></th>
+                            <th onclick="sortTable('expense', 'description')">Deskripsi <i class="fas fa-sort"></i></th>
+                            <th onclick="sortTable('expense', 'category')">Kategori <i class="fas fa-sort"></i></th>
+                            <th onclick="sortTable('expense', 'amount')">Jumlah <i class="fas fa-sort"></i></th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="expenseTableBody"></tbody>
+                </table>
+                <p class="empty-state" id="expenseEmpty">Belum ada pengeluaran. Tambah pengeluaran pertama!</p>
+            </div>
+        </section>
+
+        <!-- Receivables Page -->
+        <section id="page-receivables" class="page">
+            <div class="page-header">
+                <div>
+                    <h1>Piutang</h1>
+                    <p class="text-muted">Catat uang yang dipinjam orang lain kepadamu</p>
+                </div>
+                <button class="btn-primary glass" onclick="openModal('receivable')">
+                    <i class="fas fa-plus"></i> Tambah Piutang
+                </button>
+            </div>
+
+            <div class="table-controls glass">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="receivableSearch" placeholder="Cari peminjam..." oninput="filterTable('receivable')">
+                </div>
+                <div class="filter-group">
+                    <select id="receivableStatusFilter" onchange="filterTable('receivable')">
+                        <option value="">Semua Status</option>
+                        <option value="pending">Tertunda</option>
+                        <option value="paid">Lunas</option>
+                        <option value="overdue">Jatuh Tempo</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-container glass">
+                <table id="receivableTable">
+                    <thead>
+                        <tr>
+                            <th onclick="sortTable('receivable', 'client')">Peminjam <i class="fas fa-sort"></i></th>
+                            <th onclick="sortTable('receivable', 'description')">Deskripsi <i class="fas fa-sort"></i></th>
+                            <th onclick="sortTable('receivable', 'amount')">Jumlah <i class="fas fa-sort"></i></th>
+                            <th onclick="sortTable('receivable', 'dueDate')">Jatuh Tempo <i class="fas fa-sort"></i></th>
+                            <th onclick="sortTable('receivable', 'status')">Status <i class="fas fa-sort"></i></th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="receivableTableBody"></tbody>
+                </table>
+                <p class="empty-state" id="receivableEmpty">Belum ada piutang. Tambah piutang pertama!</p>
+            </div>
+        </section>
+
+        <!-- Budget Page -->
+        <section id="page-budget" class="page">
+            <div class="page-header">
+                <div>
+                    <h1>Anggaran Bulanan</h1>
+                    <p class="text-muted">Atur anggaran dan pantau batas pengeluaranmu</p>
+                </div>
+            </div>
+
+            <div class="budget-summary glass">
+                <div class="budget-total">
+                    <span class="budget-label">Total Anggaran</span>
+                    <span class="budget-value" id="budgetTotal">Rp 0</span>
+                </div>
+                <div class="budget-total">
+                    <span class="budget-label">Terpakai</span>
+                    <span class="budget-value" id="budgetSpent" style="color:var(--accent-red)">Rp 0</span>
+                </div>
+                <div class="budget-total">
+                    <span class="budget-label">Sisa</span>
+                    <span class="budget-value" id="budgetRemaining">Rp 0</span>
+                </div>
+            </div>
+
+            <div class="budget-grid" id="budgetGrid"></div>
+        </section>
+    </main>
+
+    <!-- Hidden file input for import -->
+    <input type="file" id="importFileInput" accept=".json" style="display:none">
+
+    <!-- Modal -->
+    <div id="modal" class="modal">
+        <div class="modal-content glass">
+            <div class="modal-header">
+                <h2 id="modalTitle">Tambah Entri</h2>
+                <button class="btn-close" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="modalForm" onsubmit="handleFormSubmit(event)">
+                <input type="hidden" id="editId">
+                <input type="hidden" id="formType">
+                
+                <div class="form-group">
+                    <label for="formDescription">Deskripsi</label>
+                    <input type="text" id="formDescription" required placeholder="Masukkan deskripsi">
+                </div>
+
+                <div class="form-group" id="clientGroup" style="display:none">
+                    <label for="formClient">Nama Peminjam</label>
+                    <input type="text" id="formClient" placeholder="Masukkan nama peminjam">
+                </div>
+
+                <div class="form-group">
+                    <label for="formAmount">Jumlah (Rp)</label>
+                    <input type="number" id="formAmount" required min="0.01" step="0.01" placeholder="0">
+                </div>
+
+                <div class="form-group" id="sourceGroup">
+                    <label for="formSource">Sumber / Kategori</label>
+                    <select id="formSource"></select>
+                </div>
+
+                <div class="form-group">
+                    <label for="formDate">Tanggal</label>
+                    <input type="date" id="formDate" required>
+                </div>
+
+                <div class="form-group" id="dueDateGroup" style="display:none">
+                    <label for="formDueDate">Tanggal Jatuh Tempo</label>
+                    <input type="date" id="formDueDate">
+                </div>
+
+                <div class="form-group" id="paymentGroup" style="display:none">
+                    <label for="formPaymentMethod">Metode Pembayaran</label>
+                    <select id="formPaymentMethod">
+                        <option value="cash">Tunai</option>
+                        <option value="card">Kartu</option>
+                        <option value="bank">Transfer Bank</option>
+                        <option value="other">Lainnya</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="statusGroup" style="display:none">
+                    <label for="formStatus">Status</label>
+                    <select id="formStatus">
+                        <option value="pending">Tertunda</option>
+                        <option value="paid">Lunas</option>
+                    </select>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="closeModal()">Batal</button>
+                    <button type="submit" class="btn-primary glass" id="submitBtn">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+
+    <script src="js/database.js"></script>
+    <script src="js/effects.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
